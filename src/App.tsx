@@ -8,6 +8,7 @@ import { Home } from './components/Home';
 import { Generator } from './components/Generator';
 import { QuizPlayer } from './components/QuizPlayer';
 import { Results } from './components/Results';
+import { PrintableQuiz } from './components/PrintableQuiz';
 import { Quiz, QuizSettings } from './types';
 import { generateQuiz } from './services/gemini';
 import { Moon, Sun, BrainCircuit } from 'lucide-react';
@@ -52,50 +53,53 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 flex flex-col font-sans transition-colors duration-200">
-      <header className="p-4 md:p-6 flex justify-between items-center max-w-5xl w-full mx-auto">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={reset}>
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md">
-            <BrainCircuit className="w-6 h-6" />
+    <>
+      <div className="print:hidden min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 flex flex-col font-sans transition-colors duration-200">
+        <header className="p-4 md:p-6 flex justify-between items-center max-w-5xl w-full mx-auto">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={reset}>
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md">
+              <BrainCircuit className="w-6 h-6" />
+            </div>
+            <h1 className="font-bold text-xl tracking-tight">AI Quiz Generator</h1>
           </div>
-          <h1 className="font-bold text-xl tracking-tight">AI Quiz Generator</h1>
-        </div>
-        <button 
-          onClick={toggleDark}
-          className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-          aria-label="Toggle dark mode"
-        >
-          {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        </button>
-      </header>
+          <button 
+            onClick={toggleDark}
+            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Toggle dark mode"
+          >
+            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+        </header>
 
-      <main className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-6 flex flex-col">
-        {view === 'home' && <Home onStart={() => setView('generator')} />}
-        {view === 'generator' && (
-          <Generator 
-            onGenerate={handleGenerate} 
-            isGenerating={isGenerating} 
-            error={error} 
-          />
-        )}
-        {view === 'playing' && quiz && (
-          <QuizPlayer 
-            quiz={quiz} 
-            onFinish={handleFinishQuiz} 
-          />
-        )}
-        {view === 'results' && quiz && (
-          <Results 
-            quiz={quiz} 
-            userAnswers={userAnswers} 
-            onRestart={reset} 
-          />
-        )}
-      </main>
+        <main className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-6 flex flex-col">
+          {view === 'home' && <Home onStart={() => setView('generator')} />}
+          {view === 'generator' && (
+            <Generator 
+              onGenerate={handleGenerate} 
+              isGenerating={isGenerating} 
+              error={error} 
+            />
+          )}
+          {view === 'playing' && quiz && (
+            <QuizPlayer 
+              quiz={quiz} 
+              onFinish={handleFinishQuiz} 
+            />
+          )}
+          {view === 'results' && quiz && (
+            <Results 
+              quiz={quiz} 
+              userAnswers={userAnswers} 
+              onRestart={reset} 
+            />
+          )}
+        </main>
 
-      <footer className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
-        <p>Created by BenuBuilds</p>
-      </footer>
-    </div>
+        <footer className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+          <p>Created by BenuBuilds</p>
+        </footer>
+      </div>
+      {quiz && <PrintableQuiz quiz={quiz} />}
+    </>
   );
 }

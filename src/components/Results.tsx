@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle2, XCircle, RefreshCw, Download, Copy, Share2, Award } from 'lucide-react';
+import { CheckCircle2, XCircle, RefreshCw, Download, Award } from 'lucide-react';
 import { Quiz } from '../types';
+import { ExportModal } from './ExportModal';
 
 interface ResultsProps {
   quiz: Quiz;
@@ -9,48 +11,18 @@ interface ResultsProps {
 }
 
 export function Results({ quiz, userAnswers, onRestart }: ResultsProps) {
+  const [isExportOpen, setIsExportOpen] = useState(false);
+
   const score = quiz.questions.reduce((acc, q, idx) => {
     return acc + (userAnswers[idx] === q.correctAnswer ? 1 : 0);
   }, 0);
 
   const percentage = Math.round((score / quiz.questions.length) * 100);
 
-  const handleCopy = () => {
-    let text = `${quiz.title}\n\n`;
-    quiz.questions.forEach((q, i) => {
-      text += `Q${i + 1}: ${q.question}\n`;
-      q.options.forEach((opt, j) => {
-        text += `  ${String.fromCharCode(65 + j)}. ${opt}\n`;
-      });
-      text += `Answer: ${q.correctAnswer}\n`;
-      text += `Explanation: ${q.explanation}\n\n`;
-    });
-    navigator.clipboard.writeText(text);
-    alert('Quiz copied to clipboard!');
-  };
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: quiz.title,
-          text: `I scored ${score}/${quiz.questions.length} on the "${quiz.title}" quiz!`,
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.error('Error sharing:', err);
-      }
-    } else {
-      handleCopy();
-    }
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <div className="w-full max-w-3xl mx-auto pb-12">
+      <ExportModal quiz={quiz} isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
+      
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -78,27 +50,11 @@ export function Results({ quiz, userAnswers, onRestart }: ResultsProps) {
           </button>
           
           <button
-            onClick={handleCopy}
-            className="px-6 py-3 rounded-xl font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center gap-2"
-          >
-            <Copy className="w-5 h-5" />
-            Copy
-          </button>
-
-          <button
-            onClick={handlePrint}
+            onClick={() => setIsExportOpen(true)}
             className="px-6 py-3 rounded-xl font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center gap-2"
           >
             <Download className="w-5 h-5" />
-            PDF
-          </button>
-
-          <button
-            onClick={handleShare}
-            className="px-6 py-3 rounded-xl font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center gap-2"
-          >
-            <Share2 className="w-5 h-5" />
-            Share
+            Export Quiz
           </button>
         </div>
       </motion.div>

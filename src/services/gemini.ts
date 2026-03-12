@@ -1,9 +1,14 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { QuizSettings, Quiz } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 export async function generateQuiz(settings: QuizSettings): Promise<Quiz> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("Gemini API key is missing. Please add it to your environment variables and rebuild the app.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   const parts: any[] = [];
 
   let prompt = `Generate a quiz with exactly ${settings.questionCount} questions.\n`;

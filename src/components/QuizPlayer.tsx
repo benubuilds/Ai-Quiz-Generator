@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, CheckCircle2, Download } from 'lucide-react';
 import { Quiz } from '../types';
+import { ExportModal } from './ExportModal';
 
 interface QuizPlayerProps {
   quiz: Quiz;
@@ -11,6 +12,7 @@ interface QuizPlayerProps {
 export function QuizPlayer({ quiz, onFinish }: QuizPlayerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   const question = quiz.questions[currentIndex];
   const isLast = currentIndex === quiz.questions.length - 1;
@@ -36,8 +38,20 @@ export function QuizPlayer({ quiz, onFinish }: QuizPlayerProps) {
 
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col h-full">
+      <ExportModal quiz={quiz} isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
+      
       <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4 text-center">{quiz.title}</h2>
+        <div className="flex items-start justify-between mb-4 gap-4">
+          <div className="w-10"></div> {/* Spacer for centering */}
+          <h2 className="text-2xl font-bold text-center flex-1">{quiz.title}</h2>
+          <button 
+            onClick={() => setIsExportOpen(true)}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            title="Export Quiz"
+          >
+            <Download className="w-5 h-5" />
+          </button>
+        </div>
         <div className="flex items-center justify-between text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
           <span>Question {currentIndex + 1} of {quiz.questions.length}</span>
           <span>{Math.round(progress)}% Completed</span>
