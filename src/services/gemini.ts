@@ -15,7 +15,7 @@ export async function generateQuiz(settings: QuizSettings): Promise<Quiz> {
   prompt += `IMPORTANT: Generate different questions every time. Do not repeat standard questions. (Random seed: ${Math.random()})\n`;
   prompt += `Difficulty level: ${settings.difficulty}.\n`;
   prompt += `Question type: ${settings.questionType}.\n`;
-  prompt += `Language: ${settings.language || 'Hindi'}. All questions, options, and explanations MUST be in this language.\n`;
+  prompt += `Language: ${settings.language || 'English'}. All questions, options, and explanations MUST be in this language.\n`;
 
   if (settings.topic) {
     prompt += `Topic: ${settings.topic}\n`;

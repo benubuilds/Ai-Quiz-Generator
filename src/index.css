@@ -2,6 +2,19 @@
 
 @custom-variant dark (&:is(.dark, .dark *));
 
+@theme {
+  --animate-slide: slide 1.5s ease-in-out infinite;
+  
+  @keyframes slide {
+    0% {
+      left: -33%;
+    }
+    100% {
+      left: 100%;
+    }
+  }
+}
+
 @layer utilities {
   .hide-scrollbar::-webkit-scrollbar {
     display: none;

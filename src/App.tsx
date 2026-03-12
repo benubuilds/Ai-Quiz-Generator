@@ -21,7 +21,7 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [elapsedTime, setElapsedTime] = useState(0);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -36,9 +36,9 @@ export default function App() {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isGenerating) {
-      setTimeLeft(30);
+      setElapsedTime(0);
       interval = setInterval(() => {
-        setTimeLeft((prev) => (prev > 1 ? prev - 1 : 1));
+        setElapsedTime((prev) => prev + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
@@ -172,13 +172,10 @@ export default function App() {
                 <div className="flex flex-col items-center gap-3 w-full mt-2">
                   <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 rounded-full font-mono font-medium">
                     <Timer className="w-4 h-4" />
-                    0:{timeLeft.toString().padStart(2, '0')} remaining
+                    {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')} elapsed
                   </div>
-                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
-                    <div 
-                      className="bg-indigo-600 h-2 rounded-full transition-all duration-1000 ease-linear" 
-                      style={{ width: `${((30 - timeLeft) / 30) * 100}%` }}
-                    ></div>
+                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden relative">
+                    <div className="bg-indigo-600 h-2 rounded-full w-1/3 animate-[slide_1.5s_ease-in-out_infinite] absolute"></div>
                   </div>
                 </div>
 

@@ -11,7 +11,7 @@ interface GeneratorProps {
 }
 
 const LANGUAGES = [
-  'Hindi', 'Bengali', 'Telugu', 'Marathi', 'Tamil', 'Urdu', 'Gujarati', 
+  'English', 'Hindi', 'Bengali', 'Telugu', 'Marathi', 'Tamil', 'Urdu', 'Gujarati', 
   'Kannada', 'Odia', 'Malayalam', 'Punjabi', 'Assamese', 'Maithili', 
   'Sanskrit', 'Santali', 'Kashmiri', 'Sindhi', 'Konkani', 'Dogri', 
   'Bodo', 'Manipuri', 'Nepali'
@@ -36,7 +36,7 @@ export function Generator({ onGenerate, isGenerating, error }: GeneratorProps) {
   const [questionCount, setQuestionCount] = useState<number>(5);
   const [difficulty, setDifficulty] = useState<Difficulty>('Medium');
   const [questionType, setQuestionType] = useState<QuestionType>('Multiple Choice');
-  const [language, setLanguage] = useState<string>('Hindi');
+  const [language, setLanguage] = useState<string>('English');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFileError(null);
