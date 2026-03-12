@@ -1,0 +1,5 @@
+{
+  "name": "AI Quiz Generator",
+  "description": "Generate quizzes from any topic, text, or document using AI.",
+  "requestFramePermissions": []
+}
