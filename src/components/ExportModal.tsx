@@ -72,7 +72,7 @@ export function ExportModal({ quiz, isOpen, onClose }: ExportModalProps) {
               <Download className="w-5 h-5" />
             </div>
             <div className="text-left">
-              <div className="font-semibold">Download PDF</div>
+              <div className="font-semibold">Download Quiz as PDF</div>
               <div className="text-sm text-slate-500 dark:text-slate-400">Save as a printable document</div>
             </div>
           </button>

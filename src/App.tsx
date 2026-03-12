@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Home } from './components/Home';
 import { Generator } from './components/Generator';
 import { QuizPlayer } from './components/QuizPlayer';
@@ -11,7 +11,7 @@ import { Results } from './components/Results';
 import { PrintableQuiz } from './components/PrintableQuiz';
 import { Quiz, QuizSettings } from './types';
 import { generateQuiz } from './services/gemini';
-import { Moon, Sun, BrainCircuit, Loader2 } from 'lucide-react';
+import { Moon, Sun, BrainCircuit, Loader2, Timer, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
@@ -21,6 +21,8 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -30,6 +32,17 @@ export default function App() {
       document.documentElement.classList.add('dark');
     }
   }, []);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isGenerating) {
+      setTimeLeft(30);
+      interval = setInterval(() => {
+        setTimeLeft((prev) => (prev > 1 ? prev - 1 : 1));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isGenerating]);
 
   const toggleDark = () => {
     const newDark = !isDark;
@@ -46,16 +59,33 @@ export default function App() {
   const handleGenerate = async (settings: QuizSettings) => {
     setIsGenerating(true);
     setError(null);
+    
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       const newQuiz = await generateQuiz(settings);
-      setQuiz(newQuiz);
-      setUserAnswers({});
-      setView('playing');
+      if (!abortController.signal.aborted) {
+        setQuiz(newQuiz);
+        setUserAnswers({});
+        setView('playing');
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to generate quiz. Please try again.');
+      if (!abortController.signal.aborted) {
+        setError(err.message || 'Failed to generate quiz. Please try again.');
+      }
     } finally {
-      setIsGenerating(false);
+      if (!abortController.signal.aborted) {
+        setIsGenerating(false);
+      }
     }
+  };
+
+  const handleCancel = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setIsGenerating(false);
   };
 
   const handleFinishQuiz = (answers: Record<number, string>) => {
@@ -124,12 +154,44 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
             >
-              <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-4 max-w-sm w-full mx-4 border border-slate-200 dark:border-slate-800">
-                <Loader2 className="w-12 h-12 text-indigo-600 dark:text-indigo-400 animate-spin" />
-                <h3 className="text-xl font-bold text-center">Generating your Quiz...</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
+              <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-4 max-w-sm w-full mx-4 border border-slate-200 dark:border-slate-800 relative">
+                <button 
+                  onClick={handleCancel}
+                  className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                  title="Cancel Generation"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                <div className="relative mt-2">
+                  <Loader2 className="w-16 h-16 text-indigo-600 dark:text-indigo-400 animate-spin" />
+                </div>
+                
+                <h3 className="text-xl font-bold text-center mt-2">Generating your Quiz...</h3>
+                
+                <div className="flex flex-col items-center gap-3 w-full mt-2">
+                  <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 rounded-full font-mono font-medium">
+                    <Timer className="w-4 h-4" />
+                    0:{timeLeft.toString().padStart(2, '0')} remaining
+                  </div>
+                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="bg-indigo-600 h-2 rounded-full transition-all duration-1000 ease-linear" 
+                      style={{ width: `${((30 - timeLeft) / 30) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <p className="text-sm text-slate-500 dark:text-slate-400 text-center mt-2">
                   This might take a moment depending on the size of your input. We are analyzing the content and crafting questions.
                 </p>
+                
+                <button
+                  onClick={handleCancel}
+                  className="mt-2 w-full py-2.5 rounded-xl font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  Cancel
+                </button>
               </div>
             </motion.div>
           )}

@@ -16,7 +16,13 @@ export interface Quiz {
 export interface QuizSettings {
   topic?: string;
   text?: string;
+  link?: string;
   file?: {
+    data: string;
+    mimeType: string;
+    name: string;
+  };
+  image?: {
     data: string;
     mimeType: string;
     name: string;
