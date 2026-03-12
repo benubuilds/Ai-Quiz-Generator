@@ -14,13 +14,14 @@ export async function generateQuiz(settings: QuizSettings): Promise<Quiz> {
   let prompt = `Generate a quiz with exactly ${settings.questionCount} questions.\n`;
   prompt += `Difficulty level: ${settings.difficulty}.\n`;
   prompt += `Question type: ${settings.questionType}.\n`;
+  prompt += `Language: ${settings.language || 'English'}. All questions, options, and explanations MUST be in this language.\n`;
 
   if (settings.topic) {
     prompt += `Topic: ${settings.topic}\n`;
   } else if (settings.text) {
     prompt += `Based on the following text:\n${settings.text}\n`;
   } else if (settings.file) {
-    prompt += `Based on the attached document.\n`;
+    prompt += `Based on the attached document/image.\n`;
     parts.push({
       inlineData: {
         data: settings.file.data,
@@ -41,7 +42,7 @@ export async function generateQuiz(settings: QuizSettings): Promise<Quiz> {
         properties: {
           title: {
             type: Type.STRING,
-            description: "A catchy title for the quiz.",
+            description: `A catchy title for the quiz in ${settings.language || 'English'}.`,
           },
           questions: {
             type: Type.ARRAY,
@@ -50,12 +51,12 @@ export async function generateQuiz(settings: QuizSettings): Promise<Quiz> {
               properties: {
                 question: {
                   type: Type.STRING,
-                  description: "The question text.",
+                  description: `The question text in ${settings.language || 'English'}.`,
                 },
                 options: {
                   type: Type.ARRAY,
                   items: { type: Type.STRING },
-                  description: "4 options for MCQ, or ['True', 'False'] for True/False questions.",
+                  description: `4 options for MCQ, or ['True', 'False'] (translated to ${settings.language || 'English'}) for True/False questions.`,
                 },
                 correctAnswer: {
                   type: Type.STRING,
@@ -63,7 +64,7 @@ export async function generateQuiz(settings: QuizSettings): Promise<Quiz> {
                 },
                 explanation: {
                   type: Type.STRING,
-                  description: "A short explanation of why the answer is correct.",
+                  description: `A short explanation of why the answer is correct in ${settings.language || 'English'}.`,
                 },
               },
               required: ["question", "options", "correctAnswer", "explanation"],

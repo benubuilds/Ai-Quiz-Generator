@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { FileText, Type, Upload, Loader2, AlertCircle } from 'lucide-react';
+import { FileText, Type, Upload, Loader2, AlertCircle, Globe } from 'lucide-react';
 import { QuizSettings, Difficulty, QuestionType } from '../types';
+import * as mammoth from 'mammoth';
 
 interface GeneratorProps {
   onGenerate: (settings: QuizSettings) => void;
@@ -9,20 +10,36 @@ interface GeneratorProps {
   error: string | null;
 }
 
+const LANGUAGES = [
+  'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 
+  'Hindi', 'Bengali', 'Telugu', 'Marathi', 'Tamil', 'Urdu', 'Gujarati', 
+  'Kannada', 'Odia', 'Malayalam', 'Punjabi', 'Assamese', 'Maithili', 
+  'Chinese', 'Japanese', 'Korean', 'Arabic', 'Russian'
+];
+
 export function Generator({ onGenerate, isGenerating, error }: GeneratorProps) {
   const [inputType, setInputType] = useState<'topic' | 'text' | 'file'>('topic');
   const [topic, setTopic] = useState('');
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [questionCount, setQuestionCount] = useState<number>(5);
   const [difficulty, setDifficulty] = useState<Difficulty>('Medium');
   const [questionType, setQuestionType] = useState<QuestionType>('Multiple Choice');
+  const [language, setLanguage] = useState<string>('English');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFileError(null);
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        setFileError('File size must be less than 10MB');
+        setFile(null);
+        return;
+      }
+      setFile(selectedFile);
     }
   };
 
@@ -32,28 +49,45 @@ export function Generator({ onGenerate, isGenerating, error }: GeneratorProps) {
     if (inputType === 'file' && !file) return;
 
     let fileData;
+    let extractedText;
+
     if (inputType === 'file' && file) {
-      const reader = new FileReader();
-      fileData = await new Promise((resolve) => {
-        reader.onloadend = () => {
-          const base64String = (reader.result as string).split(',')[1];
-          resolve({
-            data: base64String,
-            mimeType: file.type,
-            name: file.name,
-          });
-        };
-        reader.readAsDataURL(file);
-      });
+      if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+        // Parse DOCX using mammoth
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const result = await mammoth.extractRawText({ arrayBuffer });
+          extractedText = result.value;
+        } catch (err) {
+          console.error('Error parsing DOCX:', err);
+          setFileError('Failed to parse the Word document. Please try a PDF or text file.');
+          return;
+        }
+      } else {
+        // Pass as base64 for PDF, Images, TXT
+        const reader = new FileReader();
+        fileData = await new Promise((resolve) => {
+          reader.onloadend = () => {
+            const base64String = (reader.result as string).split(',')[1];
+            resolve({
+              data: base64String,
+              mimeType: file.type || 'application/octet-stream',
+              name: file.name,
+            });
+          };
+          reader.readAsDataURL(file);
+        });
+      }
     }
 
     onGenerate({
       topic: inputType === 'topic' ? topic : undefined,
-      text: inputType === 'text' ? text : undefined,
-      file: inputType === 'file' ? fileData as any : undefined,
+      text: inputType === 'text' ? text : (extractedText || undefined),
+      file: fileData as any,
       questionCount,
       difficulty,
       questionType,
+      language,
     });
   };
 
@@ -75,10 +109,10 @@ export function Generator({ onGenerate, isGenerating, error }: GeneratorProps) {
         <p className="text-slate-500 dark:text-slate-400">Choose your source material and customize the settings.</p>
       </div>
 
-      {error && (
+      {(error || fileError) && (
         <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl flex items-start gap-3 border border-red-200 dark:border-red-800/30">
           <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
-          <p className="text-sm">{error}</p>
+          <p className="text-sm">{error || fileError}</p>
         </div>
       )}
 
@@ -87,7 +121,7 @@ export function Generator({ onGenerate, isGenerating, error }: GeneratorProps) {
           {[
             { id: 'topic', label: 'Topic', icon: Type },
             { id: 'text', label: 'Text', icon: FileText },
-            { id: 'file', label: 'PDF / Doc', icon: Upload },
+            { id: 'file', label: 'Document / Image', icon: Upload },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -99,7 +133,7 @@ export function Generator({ onGenerate, isGenerating, error }: GeneratorProps) {
               }`}
             >
               <tab.icon className="w-4 h-4" />
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>
@@ -133,7 +167,7 @@ export function Generator({ onGenerate, isGenerating, error }: GeneratorProps) {
 
           {inputType === 'file' && (
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Upload a document</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Upload a document or image</label>
               <div 
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-8 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
@@ -146,14 +180,14 @@ export function Generator({ onGenerate, isGenerating, error }: GeneratorProps) {
                     {file ? file.name : 'Click to upload or drag and drop'}
                   </p>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    PDF, TXT, DOCX (Max 5MB)
+                    PDF, DOCX, TXT, JPG, PNG (Max 10MB)
                   </p>
                 </div>
                 <input
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileChange}
-                  accept=".pdf,.txt,.doc,.docx"
+                  accept=".pdf,.txt,.doc,.docx,.jpg,.jpeg,.png"
                   className="hidden"
                 />
               </div>
@@ -162,9 +196,9 @@ export function Generator({ onGenerate, isGenerating, error }: GeneratorProps) {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Number of Questions</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Questions</label>
           <div className="flex gap-2">
             {[5, 10, 15, 20].map((num) => (
               <button
@@ -208,10 +242,28 @@ export function Generator({ onGenerate, isGenerating, error }: GeneratorProps) {
             onChange={(e) => setQuestionType(e.target.value as QuestionType)}
             className="w-full px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm font-medium appearance-none"
           >
-            <option value="Multiple Choice">Multiple Choice (MCQ)</option>
+            <option value="Multiple Choice">Multiple Choice</option>
             <option value="True / False">True / False</option>
             <option value="Mixed">Mixed</option>
           </select>
+        </div>
+
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
+            Language
+          </label>
+          <div className="relative">
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm font-medium appearance-none"
+            >
+              {LANGUAGES.map(lang => (
+                <option key={lang} value={lang}>{lang}</option>
+              ))}
+            </select>
+            <Globe className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
         </div>
       </div>
 

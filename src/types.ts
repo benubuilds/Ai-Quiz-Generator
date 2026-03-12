@@ -24,4 +24,5 @@ export interface QuizSettings {
   questionCount: number;
   difficulty: Difficulty;
   questionType: QuestionType;
+  language: string;
 }
