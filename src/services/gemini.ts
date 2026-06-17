@@ -44,7 +44,6 @@ export async function generateQuiz(settings: QuizSettings): Promise<Quiz> {
   parts.push({ text: prompt });
 
   const config: any = {
-    thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
     temperature: 0.9,
     responseMimeType: "application/json",
     responseSchema: {
@@ -86,16 +85,33 @@ export async function generateQuiz(settings: QuizSettings): Promise<Quiz> {
     },
   };
 
-  if (settings.link) {
-    config.tools = [{ urlContext: {} }];
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: { parts },
+      config,
+    });
+
+    const jsonStr = response.text?.trim() || "{}";
+    return JSON.parse(jsonStr) as Quiz;
+  } catch (error: any) {
+    let errorMessage = error.message || "Failed to generate quiz. Please try again.";
+    
+    try {
+      if (typeof errorMessage === 'string' && errorMessage.startsWith('{')) {
+        const parsed = JSON.parse(errorMessage);
+        if (parsed.error && parsed.error.message) {
+          errorMessage = parsed.error.message;
+        }
+      }
+    } catch (e) {
+      // Ignore JSON parse error
+    }
+
+    if (errorMessage.includes("503") || errorMessage.includes("high demand") || errorMessage.includes("UNAVAILABLE")) {
+      throw new Error("The AI model is currently experiencing high demand. Please try again in a few moments.");
+    }
+    
+    throw new Error(errorMessage);
   }
-
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: { parts },
-    config,
-  });
-
-  const jsonStr = response.text?.trim() || "{}";
-  return JSON.parse(jsonStr) as Quiz;
 }

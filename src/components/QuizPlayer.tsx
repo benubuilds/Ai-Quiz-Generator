@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, ChevronLeft, CheckCircle2, Download } from 'lucide-react';
+import { ChevronRight, ChevronLeft, CheckCircle2, Download, ArrowLeft } from 'lucide-react';
 import { Quiz } from '../types';
 import { ExportModal } from './ExportModal';
 
 interface QuizPlayerProps {
   quiz: Quiz;
   onFinish: (answers: Record<number, string>) => void;
+  onExit: () => void;
 }
 
-export function QuizPlayer({ quiz, onFinish }: QuizPlayerProps) {
+export function QuizPlayer({ quiz, onFinish, onExit }: QuizPlayerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -37,12 +38,30 @@ export function QuizPlayer({ quiz, onFinish }: QuizPlayerProps) {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto flex flex-col h-full">
+    <div className="w-full max-w-2xl mx-auto flex flex-col h-full relative">
       <ExportModal quiz={quiz} isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
       
+      <div className="absolute top-0 -left-16 hidden md:block">
+        <button
+          onClick={onExit}
+          className="p-3 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:shadow-md transition-all group"
+          title="Exit Quiz"
+        >
+          <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
+        </button>
+      </div>
+
       <div className="mb-8">
         <div className="flex items-start justify-between mb-4 gap-4">
-          <div className="w-10"></div> {/* Spacer for centering */}
+          <button
+            onClick={onExit}
+            className="md:hidden w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            title="Exit Quiz"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="w-10 md:hidden"></div> {/* Spacer for centering when Arrow is removed on MD */}
+          
           <h2 className="text-2xl font-bold text-center flex-1">{quiz.title}</h2>
           <button 
             onClick={() => setIsExportOpen(true)}

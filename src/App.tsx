@@ -131,6 +131,7 @@ export default function App() {
             <QuizPlayer 
               quiz={quiz} 
               onFinish={handleFinishQuiz} 
+              onExit={() => setView('generator')}
             />
           )}
           {view === 'results' && quiz && (
