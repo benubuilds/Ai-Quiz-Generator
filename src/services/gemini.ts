@@ -24,19 +24,15 @@ export async function generateQuiz(settings: QuizSettings): Promise<Quiz> {
   } else if (settings.text) {
     prompt += `Based on the following text:\n${settings.text}\n`;
   } else if (settings.file) {
-    prompt += `Based on the attached document.\n`;
+    if (settings.file.mimeType.startsWith('image/')) {
+      prompt += `Based on the attached image.\n`;
+    } else {
+      prompt += `Based on the attached document.\n`;
+    }
     parts.push({
       inlineData: {
         data: settings.file.data,
         mimeType: settings.file.mimeType,
-      },
-    });
-  } else if (settings.image) {
-    prompt += `Based on the attached image.\n`;
-    parts.push({
-      inlineData: {
-        data: settings.image.data,
-        mimeType: settings.image.mimeType,
       },
     });
   }

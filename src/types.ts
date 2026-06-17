@@ -22,11 +22,6 @@ export interface QuizSettings {
     mimeType: string;
     name: string;
   };
-  image?: {
-    data: string;
-    mimeType: string;
-    name: string;
-  };
   questionCount: number;
   difficulty: Difficulty;
   questionType: QuestionType;
